@@ -1,0 +1,4 @@
+#!/usr/bin/fish
+set here "$(realpath -s "$(status dirname)")"
+
+$here/source-full-commands | xclip -selection clipboard

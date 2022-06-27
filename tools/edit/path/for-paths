@@ -1,0 +1,9 @@
+#!/usr/bin/fish
+
+set separator_index (contains -i '' $argv)
+
+set command $argv[(expr $separator_index + 1)..]
+
+for file in $argv[..(expr $separator_index - 1)]
+  $command $file
+end

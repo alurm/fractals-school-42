@@ -1,0 +1,128 @@
+#!/bin/sh
+# Copyright (c) 2021 Alan Urmancheev <ghelman@student.21-school.ru>
+#
+# Permission to use, copy, modify, and distribute this software for any
+# purpose with or without fee is hereby granted, provided that the above
+# copyright notice and this permission notice appear in all copies.
+#
+# THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+# WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+# MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+# ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+# WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+# ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+# OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+
+# Prepare a school header specified files. Files may exist and may already have
+# a header.
+
+set -eu
+
+################################################################################
+
+# Change the following ``who'' and ``domain'' variables if they don't work for
+# you. E.g., if you're working from home.
+
+# Email username. Example: ``who=ghelman''.
+#who=$(whoami)
+who=ghelman
+# Email domain. Example: ``domain="student.42.fr"''.
+#domain=student.$(hostname | rev | cut -f-2 -d. | rev)
+domain='student.21-school.ru'
+
+################################################################################
+
+# TODO: work for files with different comment styles, not just for the C style.
+# TODO: don't update ``Created'' field if it's already present.
+
+prog=$(basename "$0")
+
+dateFormat='+%Y/%m/%d %T'
+
+statBirthFlags='-f %B'
+dateEpochFlagsPrefix='-r ' # Space is significant.
+if [ "$(uname)" = Linux ]; then
+	statBirthFlags='-c %W'
+	dateEpochFlagsPrefix='-d @'
+fi
+
+usage () {
+	echo "Usage: $prog <file>..."
+	exit 1
+}
+
+len () {
+	printf %s "$1" | wc -c
+}
+
+nBlanks () {
+	printf '%*s' "$1" ' '
+}
+
+padding () {
+	nBlanks=$(len "$1"); shift
+	for arg; do
+		nBlanks=$((nBlanks - $(len "$arg")))
+	done
+	if [ "$nBlanks" -lt 0 ]; then
+		echo "$prog": padding: not enough space >&2
+		exit 1
+	fi
+	nBlanks "$nBlanks"
+}
+
+hasHeader () { # The test is not fully correct for the sake of simplicity.
+	sed 1q "$1" | grep -qF "$firstLineContent"
+}
+
+if [ "$#" -eq 0 ]; then
+	usage
+fi
+
+for path; do
+	file=$(basename "$path")
+
+	filePadding=$(padding '                                                   ' "$file")
+	byPadding=$(padding '                                       ' "$who" "$who" "$domain")
+	createdPadding=$(padding '                  ' "$who")
+	updatedPadding=$(padding '                 ' "$who")
+
+	updated=$(date "$dateFormat")
+
+	if [ -e "$path" ]; then
+		created=$(date $dateEpochFlagsPrefix"$(stat $statBirthFlags "$path")" "$dateFormat")
+	else
+		created=$updated
+	fi
+
+	firstLineContent='/* ************************************************************************** */'
+
+	header="\
+$firstLineContent
+/*                                                                            */
+/*                                                        :::      ::::::::   */
+/*   $file$filePadding:+:      :+:    :+:   */
+/*                                                    +:+ +:+         +:+     */
+/*   By: $who <$who@$domain>$byPadding+#+  +:+       +#+        */
+/*                                                +#+#+#+#+#+   +#+           */
+/*   Created: $created by $who$createdPadding#+#    #+#             */
+/*   Updated: $updated by $who$updatedPadding###   ########.fr       */
+/*                                                                            */
+/* ************************************************************************** */"
+	nHeaderLines=$(echo "$header" | wc -l)
+	if [ -e "$path" ] || [ -L "$path" ]; then
+		tmp=$(mktemp)
+		echo "$header" > "$tmp"
+		if hasHeader "$path"; then
+			sed -n "$((nHeaderLines + 1))"',$p' "$path" >> "$tmp"
+		else
+			echo >> "$tmp"
+			cat "$path" >> "$tmp"
+		fi
+		# Don't use mv. Mv deletes file's previous metadata.
+		cp "$tmp" "$path"
+		rm "$tmp"
+	else
+		echo "$header" > "$path"
+	fi
+done

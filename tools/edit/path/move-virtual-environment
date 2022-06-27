@@ -1,0 +1,19 @@
+#!/usr/bin/fish
+# Move python3 venv from $argv[1] to $argv[2].
+
+set fish_trace on
+
+test (count $argv) = 2; or return
+set old $argv[1]; or return
+set new $argv[2]; or return
+
+source $old/bin/activate.fish; or return
+set tmp "$(mktemp)"; or return
+pip freeze > $tmp; or return
+deactivate; or return
+
+python3 -m venv $new; or return
+source $new/bin/activate.fish; or return
+python3 -m pip install -r $tmp; or return
+rm -rf $old; or return
+rm -f $tmp; or return

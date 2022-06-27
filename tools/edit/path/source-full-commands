@@ -1,0 +1,6 @@
+#!/usr/bin/fish
+set here "$(realpath -s "$(status dirname)")"
+
+set project_root "$(realpath -s $here/../../..)"
+
+echo -- source "$(string escape $project_root/tools/edit/environment/full.fish)"
