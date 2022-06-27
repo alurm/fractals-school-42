@@ -1,0 +1,7 @@
+/heap
+/tools/edit/norminette
+/builds/regular
+/builds/debug
+*.d
+*.o
+*.a
