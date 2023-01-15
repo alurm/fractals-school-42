@@ -26,7 +26,7 @@ int	main(int argc, char **argv)
 {
 	t_data	*data;
 
-	data = &(t_data){.x = &(t_x){.window = &(t_x_window){.width = 500,},
+	data = &(t_data){.x = &(t_x){.window = &(t_x_window){.width = 800,},
 		.image = &(t_x_image){.view = &(t_view){.width = &(t_range){
 		.min = 0,}, .height = &(t_range){.min = 0,},}},},
 		.mandelbrot = &(t_mandelbrot){.type = fractal_mandelbrot,

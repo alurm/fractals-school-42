@@ -4,7 +4,7 @@ _objects := %/objects/regular.o %/objects/debug.o
 
 $(_objects) : override private mode = $(notdir $(basename $@))
 $(_objects) : %/source.c
-	cc \
+	clang \
 		$(preprocess_flags) \
 		-std=c99 -Wall -Wextra -Werror -pedantic \
 		$(if $(filter regular, $(mode)), \
